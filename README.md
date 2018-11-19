@@ -1,7 +1,7 @@
 # CallbackStepper
 ## Description
 This is an Arduino library for stepper motor controler using 3 pins (ENA, DIR, PUL).
-This library enable the motor to run with constant speed or varying speed and to invoque function will it is running at a pre-defined frequency.
+This library enable the motor to run with constant speed or varying speed and to invoque function at a pre-defined frequency while it is running. 
 
 ## Compatibility
 This library should work with every driver with the 3 pins mentionned above, have a look at the example provided for wiring.
