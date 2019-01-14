@@ -20,6 +20,8 @@ class CallbackStepper{
     void runWithAcceleration(long steps, void callback(int), int periodicity=200);
     // This function will run the motor at maximum speed.
     void runWithoutAcceleration(long steps, void callback(int), int periodicity=200);
+    void CallbackStepper::runAccelerationDeceleration(long steps, void callback(int), int periodicity=200);
+    void CallbackStepper::runAccelerationNoDeceleration(long steps, void callback(int), int periodicity=200);
 
     double getMinSpeed();
     double getMaxSpeed();
@@ -49,10 +51,10 @@ class CallbackStepper{
     // Compute the number of steps needed to go from min to max speed according to acceleration.
     long setStepsToAccelerate();
 
-    void run(long steps, void callback(int), int periodicity, bool accelerate);
+    void run(long steps, void callback(int), int periodicity, bool accelerate, bool decelerate=true);
 
     // compute the speed for the next move.
-    double computeActualSpeed(double actualSpeed, long absStepsToPerform, int i, int &accelerationPhase, double maxSpeedPossible);
+    double computeActualSpeed(double actualSpeed, long absStepsToPerform, int i, int &accelerationPhase, double maxSpeedPossible, bool decelerate);
     void setDirection(int direction);
     int getDirection(long nbStepsToPerform);
     void performOneStep(int stepDelay);

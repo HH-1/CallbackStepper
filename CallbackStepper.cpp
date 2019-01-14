@@ -99,7 +99,7 @@ void CallbackStepper::stopHolding(){
 }
 
 
-void CallbackStepper::run(long steps, void callback(int), int periodicity, bool accelerate){
+void CallbackStepper::run(long steps, void callback(int), int periodicity, bool accelerate, bool decelerate=true){
   bool wasHolding = _holding;
   if(!wasHolding){
     startHolding();
@@ -113,10 +113,16 @@ void CallbackStepper::run(long steps, void callback(int), int periodicity, bool 
     // accelerationPhase = 0,1 or -1 (0 accelerate, 1 constant speed, -1 decreasing speed)
     int accelerationPhase = 0;
     double actual_speed = _min_speed;
-    double maxSpeedPossible = _StepsToAccelerate*2 > absStepsToPerform ? _min_speed + (double) (absStepsToPerform + 1)* _acc / (2 * _steps_per_revolution) : _max_speed;
+    double maxSpeedPossible;
+    if (decelerate){
+      maxSpeedPossible = _StepsToAccelerate*2 > absStepsToPerform ? _min_speed + (double) (absStepsToPerform + 1)* _acc / (2 * _steps_per_revolution) : _max_speed;
+    }
+    else{
+      maxSpeedPossible = _StepsToAccelerate > absStepsToPerform ? _min_speed + (double) (absStepsToPerform + 1)* _acc / _steps_per_revolution : _max_speed;
+    }
     while(absStepsToPerform > periodicity){
       for(int i=0; i<periodicity; i++){
-        actual_speed = computeActualSpeed(actual_speed, absStepsToPerform, i, accelerationPhase, maxSpeedPossible);
+        actual_speed = computeActualSpeed(actual_speed, absStepsToPerform, i, accelerationPhase, maxSpeedPossible, decelerate);
         performOneStep(actual_speed == _max_speed ? max_speed_delay : computeStepDelay(actual_speed));
       }
       absStepsToPerform -= periodicity;
@@ -124,13 +130,12 @@ void CallbackStepper::run(long steps, void callback(int), int periodicity, bool 
     }
     if (absStepsToPerform > 0){
       for(int i=0; i<absStepsToPerform; i++){
-        actual_speed = computeActualSpeed(actual_speed, absStepsToPerform, i, accelerationPhase, maxSpeedPossible);
+        actual_speed = computeActualSpeed(actual_speed, absStepsToPerform, i, accelerationPhase, maxSpeedPossible, decelerate);
         performOneStep(actual_speed == _max_speed ? max_speed_delay : computeStepDelay(actual_speed));
       }
       callback(direction*absStepsToPerform);
     }
   }
-
   else{
     while(absStepsToPerform > periodicity){
       for(int i=0; i<periodicity; i++){
@@ -153,14 +158,21 @@ void CallbackStepper::run(long steps, void callback(int), int periodicity, bool 
 
 
 void CallbackStepper::runWithAcceleration(long steps, void callback(int), int periodicity=200){
-  run(steps, callback, periodicity, true);
+  run(steps, callback, periodicity, true, false);
 }
 void CallbackStepper::runWithoutAcceleration(long steps, void callback(int), int periodicity=200){
-  run(steps, callback, periodicity, false);
+  run(steps, callback, periodicity, false, false);
+}
+void CallbackStepper::runAccelerationDeceleration(long steps, void callback(int), int periodicity=200){
+  run(steps, callback, periodicity, true, true);
+}
+void CallbackStepper::runAccelerationNoDeceleration(long steps, void callback(int), int periodicity=200){
+  run(steps, callback, periodicity, true, false);
 }
 
-double CallbackStepper::computeActualSpeed(double actualSpeed, long absStepsToPerform, int i, int &accelerationPhase, double maxSpeedPossible){
-  if(accelerationPhase == 1 && absStepsToPerform-i == _StepsToAccelerate){
+double CallbackStepper::computeActualSpeed(double actualSpeed, long absStepsToPerform, int i, int &accelerationPhase, double maxSpeedPossible, bool decelerate){
+  // accelerationPhase = 0,1 or -1 (0 accelerate, 1 constant speed, -1 decreasing speed)
+  if(accelerationPhase == 1 && absStepsToPerform-i == _StepsToAccelerate && decelerate){
      accelerationPhase = -1;
   }
   if(accelerationPhase == 0){
@@ -170,7 +182,7 @@ double CallbackStepper::computeActualSpeed(double actualSpeed, long absStepsToPe
       if(actualSpeed == _max_speed){
         accelerationPhase = 1;
       }
-      else{
+      else if (decelerate){
         accelerationPhase = -1;
       }
     }
