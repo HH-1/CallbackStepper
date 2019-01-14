@@ -3,6 +3,7 @@
 // Tested and develloped for TB-6600 controller and Arduino Uno Rev3
 
 
+
 #include <Arduino.h>
 #include "CallbackStepper.h"
 
@@ -60,7 +61,7 @@ int CallbackStepper::setStepsPerRevolution(int new_steps_per_revolution){
 double CallbackStepper::setMinSpeed(double newSpeed){
   if(newSpeed > 0){
     _min_speed = newSpeed;
-    setStepsToAccelerate();  
+    setStepsToAccelerate();
   }
   return _min_speed;
 }
@@ -68,7 +69,7 @@ double CallbackStepper::setMinSpeed(double newSpeed){
 double CallbackStepper::setMaxSpeed(double newSpeed){
   if(newSpeed > 0){
     _max_speed = newSpeed;
-    setStepsToAccelerate();  
+    setStepsToAccelerate();
   }
   return _max_speed;
 }
@@ -81,8 +82,8 @@ double CallbackStepper::setAcc(double newAcc){
 }
 
 
-int CallbackStepper::setStepsToAccelerate(){
-  _StepsToAccelerate = 1 + (int) ((_max_speed-_min_speed)/_acc*_steps_per_revolution);
+long CallbackStepper::setStepsToAccelerate(){
+  _StepsToAccelerate = 1 + (long) ((_max_speed-_min_speed)/_acc*_steps_per_revolution);
   return _StepsToAccelerate;
 }
 
@@ -98,16 +99,16 @@ void CallbackStepper::stopHolding(){
 }
 
 
-void CallbackStepper::run(int steps, void callback(int), int periodicity, bool accelerate){
+void CallbackStepper::run(long steps, void callback(int), int periodicity, bool accelerate){
   bool wasHolding = _holding;
   if(!wasHolding){
     startHolding();
   }
   int direction = getDirection(steps);
   setDirection(direction);
-  int absStepsToPerform = abs(steps);
-  int max_speed_delay = computeStepDelay(_max_speed);
-  
+  long absStepsToPerform = abs(steps);
+  long max_speed_delay = computeStepDelay(_max_speed);
+
   if(accelerate){
     // accelerationPhase = 0,1 or -1 (0 accelerate, 1 constant speed, -1 decreasing speed)
     int accelerationPhase = 0;
@@ -129,7 +130,7 @@ void CallbackStepper::run(int steps, void callback(int), int periodicity, bool a
       callback(direction*absStepsToPerform);
     }
   }
-  
+
   else{
     while(absStepsToPerform > periodicity){
       for(int i=0; i<periodicity; i++){
@@ -151,14 +152,14 @@ void CallbackStepper::run(int steps, void callback(int), int periodicity, bool a
 }
 
 
-void CallbackStepper::runWithAcceleration(int steps, void callback(int), int periodicity=200){
+void CallbackStepper::runWithAcceleration(long steps, void callback(int), int periodicity=200){
   run(steps, callback, periodicity, true);
 }
-void CallbackStepper::runWithoutAcceleration(int steps, void callback(int), int periodicity=200){
+void CallbackStepper::runWithoutAcceleration(long steps, void callback(int), int periodicity=200){
   run(steps, callback, periodicity, false);
 }
 
-double CallbackStepper::computeActualSpeed(double actualSpeed, int absStepsToPerform, int i, int &accelerationPhase, double maxSpeedPossible){
+double CallbackStepper::computeActualSpeed(double actualSpeed, long absStepsToPerform, int i, int &accelerationPhase, double maxSpeedPossible){
   if(accelerationPhase == 1 && absStepsToPerform-i == _StepsToAccelerate){
      accelerationPhase = -1;
   }
@@ -193,11 +194,11 @@ void CallbackStepper::setDirection(int direction){
   }
   else if(direction < 0){
     digitalWrite (_Pin_DIR_5v,HIGH);
-    
+
   }
 }
 
-int CallbackStepper::getDirection(int nbStepsToPerform){
+int CallbackStepper::getDirection(long nbStepsToPerform){
   if(nbStepsToPerform > 0){
     return 1;
   }
@@ -215,6 +216,6 @@ void CallbackStepper::performOneStep(int stepDelay){
 }
 
 
-int CallbackStepper::computeStepDelay(double speed_value){
-  return (int) ((60.0/(float)((long)speed_value*(long)_steps_per_revolution))*1000000.0);
+long CallbackStepper::computeStepDelay(double speed_value){
+  return (long) ((60.0/(float)((long)speed_value*(long)_steps_per_revolution))*1000000.0);
 }
